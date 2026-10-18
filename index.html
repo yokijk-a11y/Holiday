@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ABY Holiday Assistant Yogyakarta</title>
 <script src="https://cdn.jsdelivr.net/npm/appwrite@28.3.0"></script>
+<script>window.Appwrite||document.write('<script src="https://cdn.jsdelivr.net/npm/appwrite@21.3.0"><\/script>')</script>
 <style>
 :root{--bg:#fbf6e6;--card:#fffdf5;--ink:#1f3b2d;--muted:#5d6b62;--green:#1f5a3f;--gold:#f2c94c;--brown:#9a4a1c;--line:#e6dcb8;--inbg:#fff;--sel:#fff4c9;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
@@ -286,12 +287,14 @@ function up(key,img){
   if(!img||img.indexOf("data:")!==0) return Promise.resolve(img||"");
   var blob=dataToBlob(img);
   var file=new File([blob], key.replace(":","-")+"-"+Date.now()+".jpg", {type:"image/jpeg"});
+  var A=window.Appwrite;
   return storage.createFile({
     bucketId: APPWRITE_BUCKET,
-    fileId: Appwrite.ID.unique(),
-    file: file
+    fileId: A.ID.unique(),
+    file: file,
+    permissions: [A.Permission.read(A.Role.any())]
   }).then(function(f){
-    return storage.getFileView({bucketId: APPWRITE_BUCKET, fileId: f.$id});
+    return String(storage.getFileView({bucketId: APPWRITE_BUCKET, fileId: f.$id}));
   });
 }
 function startEdit(){
@@ -333,7 +336,7 @@ loadRemote();
 document.getElementById("adminlink").onclick=function(e){
   e.preventDefault();
   if(!ready){
-    alert("Appwrite belum siap. Cek APPWRITE_PROJECT.");
+    alert("Appwrite belum siap. Pastikan internet aktif dan APPWRITE_PROJECT terisi.");
     return;
   }
   if(!APPWRITE_DB){
@@ -355,7 +358,7 @@ document.getElementById("alogin").onclick=function(){
   }).catch(function(e){
     console.error(e);
     var msg=(e&&(e.message||e.type))||"unknown";
-    err.textContent="Gagal login: "+msg;
+    err.textContent=(e&&e.code===401)?"Email atau password salah.":"Gagal login: "+msg;
   });
 };
 document.getElementById("alogout").onclick=function(e){
@@ -363,56 +366,41 @@ document.getElementById("alogout").onclick=function(e){
   account.deleteSession({sessionId:"current"}).then(function(){go(1)}).catch(function(){go(1)});
 };
 document.getElementById("aback").onclick=function(){go(1)};
+function seq(arr,fn){return arr.reduce(function(p,x){return p.then(function(){return fn(x)})},Promise.resolve())}
+function errText(e){
+  var c=e&&e.code,m=(e&&e.message)||"coba lagi";
+  if(c===404) return "ID tidak ditemukan. Cek APPWRITE_DB, APPWRITE_TABLE, dan APPWRITE_BUCKET. ("+m+")";
+  if(c===401||c===403) return "Tidak punya izin. Cek permission tabel dan bucket di Appwrite. ("+m+")";
+  if(c===429) return "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.";
+  return m;
+}
 document.getElementById("asave").onclick=function(){
-  var err=document.getElementById("aerr");
-  err.textContent="Menyimpan...";
-  if(!APPWRITE_DB){err.textContent="APPWRITE_DB belum diisi.";return;}
-  var ent=[];
+  var err=document.getElementById("aerr"),btn=this;
+  if(!ready||!APPWRITE_DB){err.textContent="Appwrite belum siap atau APPWRITE_DB kosong.";return}
+  btn.disabled=true;err.textContent="Menyimpan...";
+  var ent=[],rows=[];
   Object.keys(W.pk).forEach(function(k){ent.push(["pk:"+k, W.pk[k]])});
   Object.keys(W.mn).forEach(function(k){ent.push(["mn:"+k, W.mn[k]])});
-
-  Promise.all(ent.map(function(e){
-    return up(e[0], e[1].img).then(function(u){
-      e[1].img = u || e[1].img || "";
-      return {key:e[0], data:e[1]};
+  var A=window.Appwrite;
+  seq(ent,function(e){
+    return up(e[0],e[1].img).then(function(u){e[1].img=u||"";rows.push({key:e[0],data:e[1]})});
+  }).then(function(){
+    return tablesDB.listRows({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,queries:[A.Query.limit(200)]});
+  }).then(function(res){
+    var existing={},list=res.rows||res.documents||[];
+    list.forEach(function(d){if(d.key)existing[d.key]=d.$id});
+    return seq(rows,function(r){
+      var payload={key:r.key,data:JSON.stringify(r.data)};
+      if(existing[r.key]) return tablesDB.updateRow({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,rowId:existing[r.key],data:payload});
+      return tablesDB.createRow({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,rowId:A.ID.unique(),data:payload});
     });
-  })).then(function(rows){
-    return tablesDB.listRows({
-      databaseId: APPWRITE_DB,
-      tableId: APPWRITE_TABLE,
-      queries: [Appwrite.Query.limit(200)]
-    }).then(function(res){
-        var existing={};
-        var list = res.rows || res.documents || [];
-        list.forEach(function(d){if(d.key) existing[d.key]=d.$id;});
-        return Promise.all(rows.map(function(r){
-          var payload={key:r.key, data:JSON.stringify(r.data)};
-          if(existing[r.key]){
-            return tablesDB.updateRow({
-              databaseId: APPWRITE_DB,
-              tableId: APPWRITE_TABLE,
-              rowId: existing[r.key],
-              data: payload
-            });
-          }
-          return tablesDB.createRow({
-            databaseId: APPWRITE_DB,
-            tableId: APPWRITE_TABLE,
-            rowId: Appwrite.ID.unique(),
-            data: payload
-          });
-        }));
-      }).then(function(){
-        var map={};
-        rows.forEach(function(x){map[x.key]=x.data});
-        applyData(map);
-        renderPkgs();
-        err.textContent="Tersimpan. Perubahan sudah tampil untuk pengunjung.";
-      });
+  }).then(function(){
+    var map={};rows.forEach(function(x){map[x.key]=x.data});
+    applyData(map);renderPkgs();
+    err.textContent="Tersimpan. Perubahan sudah tampil untuk pengunjung.";
   }).catch(function(e){
-    console.error(e);
-    err.textContent="Gagal menyimpan: "+((e&&e.message)||"coba lagi");
-  });
+    console.error(e);err.textContent="Gagal menyimpan: "+errText(e);
+  }).then(function(){btn.disabled=false});
 };
 document.getElementById("next").onclick=function(e){
   e.preventDefault();
