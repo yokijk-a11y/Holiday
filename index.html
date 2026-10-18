@@ -154,6 +154,7 @@ var PK=[
   m:[["Bakpia Pathok","aneka isi, kemasan rapi"],["Bakpia Kukus","isi aneka rasa"],["Geplak & Yangko","manisan khas Jogja"],["Keripik & Rempeyek","gurih, tahan lama"],["Paket Oleh-oleh Campur","kombinasi favorit"]]}
 ];
 var S={};try{S=JSON.parse(document.getElementById("state").textContent)}catch(e){}
+function defImg(x){return (S.pk&&S.pk[x.id]&&S.pk[x.id].img)||""}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
 function applyData(rows){
   PK.forEach(function(x){
@@ -165,7 +166,7 @@ function applyData(rows){
 applyData({});
 function openLb(m,x){
   var l=document.getElementById("lb");
-  l.querySelector("img").src=m.img||x.img;
+  l.querySelector("img").src=m.img||defImg(x);
   l.querySelector("figcaption").innerHTML="<b>"+esc(m.n)+"</b><span>"+esc(m.d)+"</span><em>"+rp(m.p)+(x.u==="kotak"?" / kotak":"")+"</em>";
   l.hidden=false;document.body.style.overflow="hidden";
 }
@@ -195,7 +196,7 @@ PK.forEach(function(x){
   x.items.forEach(function(m,i){
     var k=x.id+i;if(q[k]==null)q[k]=0;
     var row=el("div","menu");
-    var bt=el("button","mt",'<img class="mi" src="'+(m.img||x.img)+'" alt=""><span class="tx2"><b>'+esc(m.n)+'</b><small>'+esc(m.d)+'</small></span><span class="mp">'+rp(m.p)+'</span>');
+    var bt=el("button","mt",'<img class="mi" src="'+(m.img||defImg(x))+'" alt=""><span class="tx2"><b>'+esc(m.n)+'</b><small>'+esc(m.d)+'</small></span><span class="mp">'+rp(m.p)+'</span>');
     bt.type="button";
     bt.querySelector(".mi").onclick=function(e){e.stopPropagation();openLb(m,x)};
     var qr=el("div","qrow",'<span>Jumlah ('+x.u+')</span><div class="qty"><button type="button" aria-label="Kurangi">−</button><output>0</output><button type="button" aria-label="Tambah">+</button></div>');
@@ -268,7 +269,7 @@ function renderAdmin(){
     x.items.forEach(function(m,i){
       var k=x.id+i,w=W.mn[k];
       var row=el("div","arow sub",'<img alt=""><div class="f"><label class="pick">Ganti gambar<input type="file" accept="image/*"></label><input class="nm" placeholder="Nama menu"><input class="ds" placeholder="Deskripsi"><input class="pr" type="number" min="0" step="500" inputmode="numeric" aria-label="Harga"></div>');
-      var im=row.querySelector("img");im.src=w.img||W.pk[x.id].img;
+      var im=row.querySelector("img");im.src=w.img||defImg(x);
       pick(row.querySelector("input[type=file]"),900,im,function(d){w.img=d});
       var nm=row.querySelector(".nm"),ds=row.querySelector(".ds"),pr=row.querySelector(".pr");
       nm.value=w.n;ds.value=w.d;pr.value=w.p;
