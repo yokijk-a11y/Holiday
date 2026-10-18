@@ -60,6 +60,10 @@ textarea{min-height:76px;resize:vertical}
 .bar b{font-size:1.05rem;display:block}
 .top{padding:14px 16px 4px}.top h1{margin:8px 0 0;font-size:1.4rem;color:var(--green)}.back{border:0;background:none;color:var(--green);font:inherit;font-weight:700;padding:6px 0;cursor:pointer}[hidden]{display:none!important}
 .adm{position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:30;border:0;border-radius:99px;background:rgba(31,90,63,.92);color:#fff;font:inherit;font-weight:700;font-size:.82rem;padding:8px 14px;cursor:pointer}
+.asec{border-top:2px solid var(--line)}.asec:first-child{border:0}
+.asec>.apk{display:flex;width:100%;justify-content:space-between;align-items:center;background:none;border:0;border-top:0;margin:0;padding:14px 0;font:inherit;font-weight:800;color:var(--green);cursor:pointer;text-align:left}
+.chev2{transition:transform .2s}.asec.open .chev2{transform:rotate(180deg)}
+.abody[hidden]{display:none}
 .arow{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)}
 .arow:last-child{border:0}
 .arow img{width:96px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none}
@@ -261,22 +265,33 @@ function renderAdmin(){
   var box=document.getElementById("alist");box.innerHTML="";
   function pick(fi,mw,im,setter){fi.onchange=function(){if(fi.files[0])shrink(fi.files[0],mw,function(d){if(d){setter(d);im.src=d}else document.getElementById("aerr").textContent="Gambar tidak bisa dibaca."})}}
   PK.forEach(function(x){
-    box.appendChild(el("div","apk",x.n));
-    var r0=el("div","arow",'<img alt=""><div class="f"><b>Gambar paket</b><label class="pick">Ganti gambar<input type="file" accept="image/*"></label></div>');
-    var i0=r0.querySelector("img");i0.src=W.pk[x.id].img;
-    pick(r0.querySelector("input"),700,i0,function(d){W.pk[x.id].img=d});
-    box.appendChild(r0);
-    x.items.forEach(function(m,i){
-      var k=x.id+i,w=W.mn[k];
-      var row=el("div","arow sub",'<img alt=""><div class="f"><label class="pick">Ganti gambar<input type="file" accept="image/*"></label><input class="nm" placeholder="Nama menu"><input class="ds" placeholder="Deskripsi"><input class="pr" type="number" min="0" step="500" inputmode="numeric" aria-label="Harga"></div>');
-      var im=row.querySelector("img");im.src=w.img||defImg(x);
-      pick(row.querySelector("input[type=file]"),900,im,function(d){w.img=d});
-      var nm=row.querySelector(".nm"),ds=row.querySelector(".ds"),pr=row.querySelector(".pr");
-      nm.value=w.n;ds.value=w.d;pr.value=w.p;
-      nm.oninput=function(){w.n=nm.value};ds.oninput=function(){w.d=ds.value};
-      pr.oninput=function(){w.p=parseInt(pr.value,10)||0};
-      box.appendChild(row);
-    });
+    var sec=el("div","asec");
+    var hd=el("button","apk",'<span>'+x.n+'</span><span class="chev2">▾</span>');hd.type="button";
+    var body=el("div","abody");body.hidden=true;
+    var built=false;
+    function build(){
+      var r0=el("div","arow",'<img alt=""><div class="f"><b>Gambar paket</b><label class="pick">Ganti gambar<input type="file" accept="image/*"></label></div>');
+      var i0=r0.querySelector("img");i0.src=W.pk[x.id].img;
+      pick(r0.querySelector("input"),700,i0,function(d){W.pk[x.id].img=d});
+      body.appendChild(r0);
+      x.items.forEach(function(m,i){
+        var k=x.id+i,w=W.mn[k];
+        var row=el("div","arow sub",'<img alt=""><div class="f"><label class="pick">Ganti gambar<input type="file" accept="image/*"></label><input class="nm" placeholder="Nama menu"><input class="ds" placeholder="Deskripsi"><input class="pr" type="number" min="0" step="500" inputmode="numeric" aria-label="Harga"></div>');
+        var im=row.querySelector("img");im.src=w.img||defImg(x);
+        pick(row.querySelector("input[type=file]"),900,im,function(d){w.img=d});
+        var nm=row.querySelector(".nm"),ds=row.querySelector(".ds"),pr=row.querySelector(".pr");
+        nm.value=w.n;ds.value=w.d;pr.value=w.p;
+        nm.oninput=function(){w.n=nm.value};ds.oninput=function(){w.d=ds.value};
+        pr.oninput=function(){w.p=parseInt(pr.value,10)||0};
+        body.appendChild(row);
+      });
+    }
+    hd.onclick=function(){
+      var opening=body.hidden;
+      Array.prototype.forEach.call(box.querySelectorAll(".asec"),function(o){o.querySelector(".abody").hidden=true;o.classList.remove("open")});
+      if(opening){if(!built){build();built=true}body.hidden=false;sec.classList.add("open")}
+    };
+    sec.appendChild(hd);sec.appendChild(body);box.appendChild(sec);
   });
 }
 function dataToBlob(d){
