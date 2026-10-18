@@ -329,8 +329,12 @@ function loadRemote(){
       });
       applyData(rows);
       renderPkgs();
+      if(/[?&]debug/.test(location.search))alert("Data termuat: "+list.length+" baris dari Appwrite.");
     })
-    .catch(function(e){console.warn("loadRemote",e)});
+    .catch(function(e){
+      console.warn("loadRemote",e);
+      if(/[?&]debug/.test(location.search))alert("Gagal memuat data: "+errText(e));
+    });
 }
 loadRemote();
 
