@@ -286,8 +286,12 @@ function up(key,img){
   if(!img||img.indexOf("data:")!==0) return Promise.resolve(img||"");
   var blob=dataToBlob(img);
   var file=new File([blob], key.replace(":","-")+"-"+Date.now()+".jpg", {type:"image/jpeg"});
-  return storage.createFile(APPWRITE_BUCKET, Appwrite.ID.unique(), file).then(function(f){
-    return storage.getFileView(APPWRITE_BUCKET, f.$id);
+  return storage.createFile({
+    bucketId: APPWRITE_BUCKET,
+    fileId: Appwrite.ID.unique(),
+    file: file
+  }).then(function(f){
+    return storage.getFileView({bucketId: APPWRITE_BUCKET, fileId: f.$id});
   });
 }
 function startEdit(){
@@ -306,8 +310,11 @@ function showAdmin(logged){
 }
 function loadRemote(){
   if(!ready || !APPWRITE_DB) return;
-  tablesDB.listRows(APPWRITE_DB, APPWRITE_TABLE, [Appwrite.Query.limit(200)])
-    .then(function(res){
+  tablesDB.listRows({
+    databaseId: APPWRITE_DB,
+    tableId: APPWRITE_TABLE,
+    queries: [Appwrite.Query.limit(200)]
+  }).then(function(res){
       var rows={};
       var list = res.rows || res.documents || [];
       list.forEach(function(d){
@@ -338,21 +345,22 @@ document.getElementById("adminlink").onclick=function(e){
 document.getElementById("alogin").onclick=function(){
   var err=document.getElementById("lerr");
   err.textContent="Masuk...";
-  account.createEmailPasswordSession(
-    document.getElementById("aemail").value.trim(),
-    document.getElementById("apass").value
-  ).then(function(){
+  var email=document.getElementById("aemail").value.trim();
+  var pass=document.getElementById("apass").value;
+  account.createEmailPasswordSession({email:email, password:pass})
+  .then(function(){
     err.textContent="";
     document.getElementById("apass").value="";
     showAdmin(true);
   }).catch(function(e){
     console.error(e);
-    err.textContent="Email atau password salah.";
+    var msg=(e&&(e.message||e.type))||"unknown";
+    err.textContent="Gagal login: "+msg;
   });
 };
 document.getElementById("alogout").onclick=function(e){
   e.preventDefault();
-  account.deleteSession("current").then(function(){go(1)}).catch(function(){go(1)});
+  account.deleteSession({sessionId:"current"}).then(function(){go(1)}).catch(function(){go(1)});
 };
 document.getElementById("aback").onclick=function(){go(1)};
 document.getElementById("asave").onclick=function(){
@@ -369,17 +377,30 @@ document.getElementById("asave").onclick=function(){
       return {key:e[0], data:e[1]};
     });
   })).then(function(rows){
-    return tablesDB.listRows(APPWRITE_DB, APPWRITE_TABLE, [Appwrite.Query.limit(200)])
-      .then(function(res){
+    return tablesDB.listRows({
+      databaseId: APPWRITE_DB,
+      tableId: APPWRITE_TABLE,
+      queries: [Appwrite.Query.limit(200)]
+    }).then(function(res){
         var existing={};
         var list = res.rows || res.documents || [];
         list.forEach(function(d){if(d.key) existing[d.key]=d.$id;});
         return Promise.all(rows.map(function(r){
           var payload={key:r.key, data:JSON.stringify(r.data)};
           if(existing[r.key]){
-            return tablesDB.updateRow(APPWRITE_DB, APPWRITE_TABLE, existing[r.key], payload);
+            return tablesDB.updateRow({
+              databaseId: APPWRITE_DB,
+              tableId: APPWRITE_TABLE,
+              rowId: existing[r.key],
+              data: payload
+            });
           }
-          return tablesDB.createRow(APPWRITE_DB, APPWRITE_TABLE, Appwrite.ID.unique(), payload);
+          return tablesDB.createRow({
+            databaseId: APPWRITE_DB,
+            tableId: APPWRITE_TABLE,
+            rowId: Appwrite.ID.unique(),
+            data: payload
+          });
         }));
       }).then(function(){
         var map={};
