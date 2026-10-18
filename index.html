@@ -60,6 +60,25 @@ textarea{min-height:76px;resize:vertical}
 .bar b{font-size:1.05rem;display:block}
 .top{padding:14px 16px 4px}.top h1{margin:8px 0 0;font-size:1.4rem;color:var(--green)}.back{border:0;background:none;color:var(--green);font:inherit;font-weight:700;padding:6px 0;cursor:pointer}[hidden]{display:none!important}
 .adm{position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:30;border:0;border-radius:99px;background:rgba(31,90,63,.92);color:#fff;font:inherit;font-weight:700;font-size:.82rem;padding:8px 14px;cursor:pointer}
+.tabs,.seg,.btns{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.tabs button,.seg button{flex:1;padding:10px;border:1.5px solid var(--green);border-radius:10px;background:transparent;color:var(--green);font:inherit;font-weight:700;cursor:pointer}
+.tabs button.on,.seg button.on{background:var(--green);color:#fff}
+.mini{padding:9px 14px;border:0;border-radius:10px;background:var(--gold);color:#3a2e00;font:inherit;font-weight:700;font-size:.88rem;cursor:pointer}
+select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--inbg);color:var(--ink);font:inherit}
+#n_items .ni{display:grid;grid-template-columns:1fr 58px 96px 30px;gap:6px;margin:6px 0;align-items:center}
+#n_items .ni input{padding:8px 8px;font-size:.9rem}
+#n_items .ni button{border:0;background:none;color:#c0392b;font-size:1.3rem;cursor:pointer}
+.nota{background:#fff;color:#1f3b2d;border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0 10px;font-size:.88rem;position:relative}
+.nota .nh{text-align:center;border-bottom:2px solid #1f5a3f;padding-bottom:8px;margin-bottom:8px}
+.nota .nh b{display:block;font-size:1.05rem;color:#1f5a3f}
+.nota .nt{text-align:center;font-weight:800;margin:8px 0;letter-spacing:.04em}
+.nota table{width:100%;border-collapse:collapse;margin:8px 0}
+.nota td{padding:4px 0;vertical-align:top;border-bottom:1px dashed #e6dcb8}
+.nota td.r{text-align:right;white-space:nowrap}
+.nota .tot td{border:0;font-weight:700}
+.nota .stamp{display:inline-block;border:3px solid #1f5a3f;color:#1f5a3f;font-weight:900;font-size:1.4rem;padding:2px 14px;border-radius:8px;transform:rotate(-8deg);margin:8px 0}
+.nota .wait{display:inline-block;border:2px solid #9a4a1c;color:#9a4a1c;font-weight:800;padding:2px 10px;border-radius:8px;margin:8px 0}
+@media print{body>*:not(.wrap){display:none!important}.wrap>*:not(#p3){display:none!important}#p3>*:not(.card){display:none!important}#editbox>*:not(#tnota){display:none!important}#tnota>*:not(#n_out){display:none!important}#n_out .btns{display:none!important}.nota{border:0}}
 .asec{border-top:2px solid var(--line)}.asec:first-child{border:0}
 .asec>.apk{display:flex;width:100%;justify-content:space-between;align-items:center;background:none;border:0;border-top:0;margin:0;padding:14px 0;font:inherit;font-weight:800;color:var(--green);cursor:pointer;text-align:left}
 .chev2{transition:transform .2s}.asec.open .chev2{transform:rotate(180deg)}
@@ -126,7 +145,31 @@ textarea{min-height:76px;resize:vertical}
     <label for="apass">Password</label><input id="apass" type="password" autocomplete="current-password">
     <div class="err" id="lerr" role="alert"></div>
     <button class="send" id="alogin" type="button">Masuk</button></div>
-  <div class="card" id="editbox" hidden><h2>Gambar, Nama &amp; Harga</h2><div id="alist"></div><div class="err" id="aerr" role="alert"></div><button class="send" id="asave" type="button">Simpan</button><p class="note">Perubahan langsung tampil untuk semua pengunjung.</p><p class="note"><a href="#" id="alogout">Keluar</a></p></div>
+  <div class="card" id="editbox" hidden><div class="tabs"><button type="button" id="tabm" class="on">Menu</button><button type="button" id="tabn">Nota</button></div><div id="tmenu"><h2>Gambar, Nama &amp; Harga</h2><div id="alist"></div><div class="err" id="aerr" role="alert"></div><button class="send" id="asave" type="button">Simpan</button><p class="note">Perubahan langsung tampil untuk semua pengunjung.</p></div>
+<div id="tnota" hidden>
+ <h2>Buat Nota</h2>
+ <div class="seg"><button type="button" id="nk" class="on">Nota Konfirmasi</button><button type="button" id="nl">Nota Lunas</button></div>
+ <label for="n_no">No. nota</label><input id="n_no">
+ <div class="row"><div><label for="n_tgl">Tanggal nota</label><input id="n_tgl" type="date"></div><div><label for="n_antar">Tanggal antar</label><input id="n_antar" type="date"></div></div>
+ <div class="row"><div><label for="n_jam">Jam antar</label><input id="n_jam" type="time"></div><div><label for="n_wa">WA pelanggan</label><input id="n_wa" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx"></div></div>
+ <label for="n_nama">Nama pelanggan</label><input id="n_nama">
+ <label for="n_alamat">Penginapan / alamat</label><textarea id="n_alamat"></textarea>
+ <label for="n_sel">Tambah menu</label>
+ <div class="row"><select id="n_sel"></select><input id="n_qty" type="number" min="1" value="1" aria-label="Jumlah"></div>
+ <div class="btns"><button type="button" class="mini" id="n_add">+ Tambah menu</button><button type="button" class="mini" id="n_custom">+ Item lain</button></div>
+ <div id="n_items"></div>
+ <div class="row"><div><label for="n_ongkir">Ongkir (Rp)</label><input id="n_ongkir" type="number" min="0" value="0"></div><div><label for="n_diskon">Diskon (Rp)</label><input id="n_diskon" type="number" min="0" value="0"></div></div>
+ <div id="n_kbox"><label for="n_dp">DP / uang muka (Rp)</label><input id="n_dp" type="number" min="0" value="0">
+  <label for="n_bayar">Info pembayaran (rekening / QRIS)</label><textarea id="n_bayar" placeholder="Isi sekali, akan diingat di perangkat ini"></textarea></div>
+ <div id="n_lbox" hidden><div class="row"><div><label for="n_metode">Metode bayar</label><select id="n_metode"><option>Tunai</option><option>Transfer</option><option>QRIS</option></select></div><div><label for="n_tbayar">Tanggal bayar</label><input id="n_tbayar" type="date"></div></div></div>
+ <label for="n_cat">Catatan (opsional)</label><textarea id="n_cat"></textarea>
+ <div class="err" id="n_err" role="alert"></div>
+ <button class="send" id="n_make" type="button">Buat Nota</button>
+ <div id="n_out" hidden>
+  <div class="nota" id="nota"></div>
+  <div class="btns"><button type="button" class="mini" id="n_wa_btn">Kirim WhatsApp</button><button type="button" class="mini" id="n_img">Gambar (PNG)</button><button type="button" class="mini" id="n_print">Cetak / PDF</button></div>
+ </div>
+</div><p class="note"><a href="#" id="alogout">Keluar</a></p></div>
  </div>
  <p class="note">ABY • Layanan Lokal untuk Wisatawan • Yogyakarta • <a href="#" id="adminlink" style="color:inherit;opacity:.55">Admin</a></p>
 </div>
@@ -421,6 +464,145 @@ document.getElementById("asave").onclick=function(){
   }).catch(function(e){
     console.error(e);err.textContent="Gagal menyimpan: "+errText(e);
   }).then(function(){btn.disabled=false});
+};
+
+/* ===== Nota konfirmasi & nota lunas ===== */
+var ntype="k",NI=[],NM=null;
+function $(i){return document.getElementById(i)}
+function tglID(v){if(!v)return "-";var d=new Date(v+"T00:00:00");return isNaN(d)?v:d.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}
+function todayISO(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(dd<10?"0":"")+dd}
+function newNo(){var d=new Date(),p=function(n){return (n<10?"0":"")+n};return (ntype==="l"?"NL-":"NK-")+String(d.getFullYear()).slice(2)+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())}
+function setNType(t){
+  ntype=t;$("nk").classList.toggle("on",t==="k");$("nl").classList.toggle("on",t==="l");
+  $("n_kbox").hidden=t==="l";$("n_lbox").hidden=t!=="l";
+  $("n_no").value=newNo();$("n_out").hidden=true;
+}
+function fillSel(){
+  var h="";
+  PK.forEach(function(x){h+='<optgroup label="'+esc(x.n)+'">';x.items.forEach(function(m,i){h+='<option value="'+x.id+"|"+i+'">'+esc(m.n)+" - "+rp(m.p)+"</option>"})+"";h+="</optgroup>"});
+  $("n_sel").innerHTML=h;
+}
+function drawItems(){
+  var box=$("n_items");box.innerHTML="";
+  NI.forEach(function(it,i){
+    var r=el("div","ni",'<input placeholder="Nama item"><input type="number" min="1" aria-label="Jumlah"><input type="number" min="0" aria-label="Harga"><button type="button" aria-label="Hapus">×</button>');
+    var f=r.querySelectorAll("input");
+    f[0].value=it.n;f[1].value=it.q;f[2].value=it.p;
+    f[0].oninput=function(){it.n=f[0].value};
+    f[1].oninput=function(){it.q=parseInt(f[1].value,10)||0};
+    f[2].oninput=function(){it.p=parseInt(f[2].value,10)||0};
+    r.querySelector("button").onclick=function(){NI.splice(i,1);drawItems()};
+    box.appendChild(r);
+  });
+}
+function startNota(){
+  fillSel();
+  if(!$("n_tgl").value)$("n_tgl").value=todayISO();
+  try{if(!$("n_bayar").value)$("n_bayar").value=localStorage.getItem("aby_bayar")||""}catch(e){}
+  setNType(ntype);drawItems();
+}
+$("tabm").onclick=function(){$("tabm").classList.add("on");$("tabn").classList.remove("on");$("tmenu").hidden=false;$("tnota").hidden=true};
+$("tabn").onclick=function(){$("tabn").classList.add("on");$("tabm").classList.remove("on");$("tmenu").hidden=true;$("tnota").hidden=false;startNota()};
+$("nk").onclick=function(){setNType("k")};
+$("nl").onclick=function(){setNType("l")};
+$("n_add").onclick=function(){
+  var v=$("n_sel").value.split("|"),x=PK.filter(function(p){return p.id===v[0]})[0];
+  if(!x)return;var m=x.items[+v[1]];
+  var q=parseInt($("n_qty").value,10)||1;
+  NI.push({n:m.n,q:q,p:m.p});drawItems();
+};
+$("n_custom").onclick=function(){NI.push({n:"",q:1,p:0});drawItems()};
+function num(i){return Math.max(0,parseInt($(i).value,10)||0)}
+function modelNota(){
+  var items=NI.filter(function(i){return i.n.trim()&&i.q>0});
+  var sub=0;items.forEach(function(i){sub+=i.q*i.p});
+  var ong=num("n_ongkir"),dis=num("n_diskon"),tot=Math.max(0,sub+ong-dis),dp=ntype==="k"?Math.min(num("n_dp"),tot):0;
+  return {type:ntype,no:$("n_no").value.trim(),tgl:$("n_tgl").value,nama:$("n_nama").value.trim(),wa:$("n_wa").value.trim(),
+    antar:$("n_antar").value,jam:$("n_jam").value,alamat:$("n_alamat").value.trim(),items:items,sub:sub,ong:ong,dis:dis,tot:tot,dp:dp,
+    sisa:tot-dp,metode:$("n_metode").value,tbayar:$("n_tbayar").value||$("n_tgl").value,bayar:$("n_bayar").value.trim(),cat:$("n_cat").value.trim()};
+}
+function notaHTML(N){
+  var L=N.type==="l",h='<div class="nh"><b>ABY HOLIDAY ASSISTANT</b>Yogyakarta &bull; WA 0888 5409 972</div>';
+  h+='<div class="nt">'+(L?"NOTA PEMBAYARAN LUNAS":"NOTA KONFIRMASI PESANAN")+'</div>';
+  h+='<div>No. nota: <b>'+esc(N.no)+'</b><br>Tanggal: '+tglID(N.tgl)+'<br>Pelanggan: <b>'+esc(N.nama||"-")+'</b>'+(N.wa?' ('+esc(N.wa)+')':'')+'<br>Antar: '+tglID(N.antar)+(N.jam?', '+esc(N.jam):'')+'<br>Alamat: '+esc(N.alamat||"-")+'</div>';
+  h+='<table>';N.items.forEach(function(i){h+='<tr><td>'+esc(i.n)+'<br><small>'+i.q+' x '+rp(i.p)+'</small></td><td class="r">'+rp(i.q*i.p)+'</td></tr>'});
+  h+='<tr class="tot"><td>Subtotal</td><td class="r">'+rp(N.sub)+'</td></tr>';
+  if(N.ong)h+='<tr class="tot"><td>Ongkir</td><td class="r">'+rp(N.ong)+'</td></tr>';
+  if(N.dis)h+='<tr class="tot"><td>Diskon</td><td class="r">-'+rp(N.dis)+'</td></tr>';
+  h+='<tr class="tot"><td>TOTAL</td><td class="r">'+rp(N.tot)+'</td></tr>';
+  if(!L&&N.dp)h+='<tr class="tot"><td>DP dibayar</td><td class="r">'+rp(N.dp)+'</td></tr><tr class="tot"><td>Sisa tagihan</td><td class="r">'+rp(N.sisa)+'</td></tr>';
+  h+='</table>';
+  if(L)h+='<div class="stamp">LUNAS</div><div>Dibayar: '+rp(N.tot)+' via '+esc(N.metode)+' pada '+tglID(N.tbayar)+'</div>';
+  else{h+='<div class="wait">'+(N.sisa>0?"MENUNGGU PEMBAYARAN":"LUNAS")+'</div>';if(N.bayar&&N.sisa>0)h+='<div>Pembayaran ke:<br>'+esc(N.bayar).replace(/\n/g,"<br>")+'</div>'}
+  if(N.cat)h+='<div style="margin-top:6px">Catatan: '+esc(N.cat)+'</div>';
+  h+='<div style="text-align:center;margin-top:10px">Terima kasih telah memesan di ABY Holiday Assistant.</div>';
+  return h;
+}
+function notaText(N){
+  var L=N.type==="l",t=["*ABY HOLIDAY ASSISTANT*",L?"*NOTA PEMBAYARAN LUNAS*":"*NOTA KONFIRMASI PESANAN*","","No: "+N.no,"Tanggal: "+tglID(N.tgl),"Pelanggan: "+(N.nama||"-"),"Antar: "+tglID(N.antar)+(N.jam?", "+N.jam:""),"Alamat: "+(N.alamat||"-"),"","*Pesanan:*"];
+  N.items.forEach(function(i){t.push("- "+i.n+" x "+i.q+" = "+rp(i.q*i.p))});
+  t.push("","Subtotal: "+rp(N.sub));if(N.ong)t.push("Ongkir: "+rp(N.ong));if(N.dis)t.push("Diskon: -"+rp(N.dis));
+  t.push("*TOTAL: "+rp(N.tot)+"*");
+  if(L)t.push("","*LUNAS* - dibayar via "+N.metode+" pada "+tglID(N.tbayar));
+  else{if(N.dp)t.push("DP dibayar: "+rp(N.dp),"Sisa tagihan: "+rp(N.sisa));if(N.bayar&&N.sisa>0)t.push("","Pembayaran ke:",N.bayar)}
+  if(N.cat)t.push("","Catatan: "+N.cat);
+  t.push("","Terima kasih telah memesan di ABY Holiday Assistant.");
+  return t.join("\n");
+}
+function paintNota(c,N,draw){
+  var W=620,P=28,X2=W-P,y=P+6,ctx=c.getContext("2d"),L=N.type==="l";
+  function T(s,x,yy,o){if(!draw)return;o=o||{};ctx.font=(o.b?"bold ":"")+(o.s||16)+"px sans-serif";ctx.fillStyle=o.c||"#1f3b2d";ctx.textAlign=o.a||"left";ctx.fillText(s,x,yy)}
+  function wrap(s,w,fs,b){ctx.font=(b?"bold ":"")+fs+"px sans-serif";var out=[],ln="";String(s).split(/\s+/).forEach(function(wd){var t=ln?ln+" "+wd:wd;if(ctx.measureText(t).width>w&&ln){out.push(ln);ln=wd}else ln=t});if(ln)out.push(ln);return out}
+  function rule(col){if(draw){ctx.strokeStyle=col||"#e6dcb8";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P,y);ctx.lineTo(X2,y);ctx.stroke()}y+=14}
+  function para(s,fs,b,col){wrap(s,W-2*P,fs,b).forEach(function(l){T(l,P,y,{s:fs,b:b,c:col});y+=fs+8})}
+  function kv(k,v,b){T(k,P,y,{b:b});T(v,X2,y,{b:b,a:"right"});y+=26}
+  if(draw){ctx.fillStyle="#ffffff";ctx.fillRect(0,0,c.width,c.height)}
+  T("ABY HOLIDAY ASSISTANT",W/2,y+4,{b:1,s:22,a:"center",c:"#1f5a3f"});y+=28;
+  T("Yogyakarta  |  WA 0888 5409 972",W/2,y,{s:14,a:"center",c:"#5d6b62"});y+=16;rule("#1f5a3f");
+  T(L?"NOTA PEMBAYARAN LUNAS":"NOTA KONFIRMASI PESANAN",W/2,y+6,{b:1,s:18,a:"center"});y+=30;
+  para("No. nota: "+N.no,15,1);para("Tanggal: "+tglID(N.tgl),15);para("Pelanggan: "+(N.nama||"-")+(N.wa?" ("+N.wa+")":""),15);
+  para("Antar: "+tglID(N.antar)+(N.jam?", "+N.jam:""),15);para("Alamat: "+(N.alamat||"-"),15);y+=4;rule();
+  N.items.forEach(function(i){
+    var ls=wrap(i.n,X2-P-150,16,1);
+    ls.forEach(function(l,k){T(l,P,y,{b:1});if(k===0)T(rp(i.q*i.p),X2,y,{b:1,a:"right"});y+=22});
+    T(i.q+" x "+rp(i.p),P,y,{s:14,c:"#5d6b62"});y+=26;
+  });
+  rule();kv("Subtotal",rp(N.sub));if(N.ong)kv("Ongkir",rp(N.ong));if(N.dis)kv("Diskon","-"+rp(N.dis));
+  kv("TOTAL",rp(N.tot),1);
+  if(!L&&N.dp){kv("DP dibayar",rp(N.dp));kv("Sisa tagihan",rp(N.sisa),1)}
+  y+=6;
+  if(L){
+    para("Dibayar via "+N.metode+" pada "+tglID(N.tbayar),15);y+=6;
+    if(draw){ctx.save();ctx.translate(W/2,y+30);ctx.rotate(-0.12);ctx.strokeStyle="#1f5a3f";ctx.lineWidth=5;ctx.strokeRect(-95,-30,190,60);ctx.font="bold 40px sans-serif";ctx.fillStyle="#1f5a3f";ctx.textAlign="center";ctx.fillText("LUNAS",0,14);ctx.restore()}
+    y+=80;
+  }else{
+    para(N.sisa>0?"MENUNGGU PEMBAYARAN":"LUNAS",16,1,"#9a4a1c");
+    if(N.bayar&&N.sisa>0){para("Pembayaran ke:",15);N.bayar.split("\n").forEach(function(l){para(l,15)})}
+  }
+  if(N.cat){y+=4;para("Catatan: "+N.cat,14,0,"#5d6b62")}
+  y+=8;T("Terima kasih telah memesan di ABY Holiday Assistant.",W/2,y,{s:14,a:"center",c:"#5d6b62"});y+=P;
+  return y;
+}
+function notaCanvas(N){var c=document.createElement("canvas");c.width=620;c.height=10;var h=paintNota(c,N,false);c.height=Math.ceil(h);paintNota(c,N,true);return c}
+function waNum(v){var d=String(v||"").replace(/\D/g,"");if(d.indexOf("0")===0)d="62"+d.slice(1);return d}
+$("n_make").onclick=function(){
+  var N=modelNota(),err=$("n_err");
+  if(!N.nama){err.textContent="Isi nama pelanggan.";return}
+  if(!N.items.length){err.textContent="Tambahkan minimal satu item.";return}
+  err.textContent="";NM=N;
+  try{if(N.bayar)localStorage.setItem("aby_bayar",N.bayar)}catch(e){}
+  $("nota").innerHTML=notaHTML(N);$("n_out").hidden=false;$("nota").scrollIntoView({behavior:"smooth",block:"start"});
+};
+$("n_wa_btn").onclick=function(){if(!NM)return;window.open("https://wa.me/"+waNum(NM.wa)+"?text="+encodeURIComponent(notaText(NM)),"_blank")};
+$("n_print").onclick=function(){window.print()};
+$("n_img").onclick=function(){
+  if(!NM)return;var c=notaCanvas(NM),name=(NM.no||"nota")+".png";
+  c.toBlob(function(b){
+    if(!b)return;
+    var f=new File([b],name,{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:name}).catch(function(){})}
+    else{var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove()}
+  },"image/png");
 };
 document.getElementById("next").onclick=function(e){
   e.preventDefault();
