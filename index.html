@@ -194,10 +194,6 @@ html[dir=rtl] .rqbody .flow ol{padding-left:0;padding-right:20px}
     <select id="rq_kat"></select>
     <label for="rq_desk">Deskripsi barang atau kebutuhan</label>
     <textarea id="rq_desk"></textarea>
-    <div class="row">
-      <div><label for="rq_jml">Jumlah yang diperlukan</label><input id="rq_jml"></div>
-      <div><label for="rq_ang">Anggaran yang tersedia</label><input id="rq_ang"></div>
-    </div>
     <label for="rq_tgl">Tanggal dibutuhkan</label>
     <input id="rq_tgl" type="date">
     <label for="rq_alamat">Alamat atau nama penginapan</label>
@@ -1131,7 +1127,7 @@ function applyReq(){
     ph.style.backgroundSize="cover";ph.style.backgroundPosition="center";
     ph.classList.toggle("hasimg",!!RQD.img);
   }g("rq_btn").textContent=rt("btn");
-  [["nama","nama"],["wa","wa"],["kat","kat"],["desk","desk"],["jml","jml"],["ang","ang"],["tgl","tgl"],["alamat","alamat"],["cat","cat"]].forEach(function(a){
+  [["nama","nama"],["wa","wa"],["kat","kat"],["desk","desk"],["tgl","tgl"],["alamat","alamat"],["cat","cat"]].forEach(function(a){
     var l=document.querySelector("label[for=rq_"+a[0]+"]");if(l)l.textContent=rt(a[1]);
   });
   g("rq_send").textContent=rt("send");g("rq_fh").textContent=rt("fh");
@@ -1159,7 +1155,7 @@ function applyReq(){
     err.textContent="";
     var sel=document.getElementById("rq_kat");
     var L=[rt("hi"),"","*"+rt("lNama")+":* "+g("rq_nama"),"*"+rt("lWa")+":* "+g("rq_wa"),"*"+rt("lKat")+":* "+sel.options[sel.selectedIndex].textContent,"*"+rt("lDesk")+":* "+g("rq_desk")];
-    [["rq_jml","lJml"],["rq_ang","lAng"],["rq_tgl","lTgl"],["rq_alamat","lAlamat"],["rq_cat","lCat"]].forEach(function(a){var v=g(a[0]);L.push("*"+rt(a[1])+":* "+(v||"-"))});
+    [["rq_tgl","lTgl"],["rq_alamat","lAlamat"],["rq_cat","lCat"]].forEach(function(a){var v=g(a[0]);L.push("*"+rt(a[1])+":* "+(v||"-"))});
     if(cur!=="id")L.push("*Bahasa pelanggan:* "+LN[cur]);
     L.push("",rt("bye"));
     window.open("https://wa.me/"+WA+"?text="+encodeURIComponent(L.join("\n")),"_blank");
