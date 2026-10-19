@@ -266,7 +266,16 @@ PK.forEach(function(x){
   var card=el("div","pkg");
   var head=el("button","head",'<div class="ph"><img src="'+x.img+'" alt="'+x.n+'"><span class="tag">'+x.n+'</span></div><div class="hb"><div class="tx"><p>'+x.d+'</p><span class="price">'+(x.from?"Mulai ":"")+rp(minP(x))+(x.u==="kotak"?" / kotak":"")+'</span></div><span class="chev">▾</span></div>');
   head.type="button";
-  head.onclick=function(){card.classList.toggle("open")};
+  head.onclick=function(){
+    var willOpen=!card.classList.contains("open");
+    if(willOpen){
+      // Tutup paket lain agar hanya satu daftar paket terbuka pada satu waktu.
+      Array.prototype.forEach.call(box.querySelectorAll(".pkg.open"),function(other){
+        if(other!==card)other.classList.remove("open");
+      });
+    }
+    card.classList.toggle("open",willOpen);
+  };
   var menus=el("div","menus",'<div class="mh">Pilih menu (tekan menu untuk atur jumlah, tekan foto untuk memperbesar):</div>');
   x.items.forEach(function(m,i){
     var k=x.id+i;if(q[k]==null)q[k]=0;
@@ -750,17 +759,28 @@ document.getElementById("next").onclick=function(e){
   go(2);
 };
 document.getElementById("back").onclick=function(){go(1)};
-var lastSig="",lastNo="";
+var lastSig="",lastNo="",sendingOrder=false;
 function newOrderNo(){var d=new Date(),p=function(n){return (n<10?"0":"")+n};return "ABY-"+String(d.getFullYear()).slice(2)+p(d.getMonth()+1)+p(d.getDate())+"-"+(1000+Math.floor(Math.random()*9000))}
-function saveOrder(o){
-  if(!ready||!APPWRITE_DB||!APPWRITE_ORDERS)return;
-  var tries=0;
-  (function go(){
-    tablesDB.createRow({databaseId:APPWRITE_DB,tableId:APPWRITE_ORDERS,rowId:Appwrite.ID.unique(),data:{data:JSON.stringify(o)}})
-    .catch(function(e){console.warn("saveOrder",e);if(++tries<3)setTimeout(go,800*tries)});
-  })();
+async function saveOrder(o){
+  if(!ready||!tablesDB||!APPWRITE_DB||!APPWRITE_ORDERS){
+    throw new Error("Koneksi database belum siap. Silakan coba lagi beberapa saat.");
+  }
+  var lastError=null;
+  for(var attempt=1;attempt<=3;attempt++){
+    try{
+      await tablesDB.createRow({databaseId:APPWRITE_DB,tableId:APPWRITE_ORDERS,rowId:Appwrite.ID.unique(),data:{data:JSON.stringify(o)}});
+      return true;
+    }catch(e){
+      lastError=e;
+      console.warn("saveOrder attempt "+attempt,e);
+      if(attempt<3) await new Promise(function(resolve){setTimeout(resolve,800*attempt)});
+    }
+  }
+  throw lastError||new Error("Pesanan gagal disimpan.");
 }
-document.getElementById("send").onclick=function(){
+document.getElementById("send").onclick=async function(){
+  if(sendingOrder)return;
+  var btn=document.getElementById("send");
   var v=function(i){return document.getElementById(i).value.trim()};
   var err=document.getElementById("err");
   var t=calc();
@@ -772,16 +792,40 @@ document.getElementById("send").onclick=function(){
   var oi=[];PK.forEach(function(x){x.items.forEach(function(m,i){var n=q[x.id+i];if(n)oi.push({n:m.n,q:n,p:m.p,pk:x.id})})});
   var ord={nama:v("nama"),wa:v("wa"),antar:v("tgl"),jam:v("jam"),alamat:v("alamat"),cat:v("cat"),items:oi,total:t,paid:false};
   var sig=JSON.stringify(ord);
-  if(sig!==lastSig){lastSig=sig;lastNo=newOrderNo();ord.no=lastNo;saveOrder(ord)}else ord.no=lastNo;
-  var L=["Halo ABY Holiday Assistant, saya ingin memesan:","","*No. Pesanan:* "+ord.no,"*Nama:* "+v("nama"),"*WhatsApp:* "+v("wa"),"","*Pesanan:*"];
-  PK.forEach(function(x){
-    var s=[];x.items.forEach(function(m,i){var n=q[x.id+i];if(n)s.push("  - "+m.n+" x "+n+" "+x.u)});
-    if(s.length){L.push("*"+x.n+"*");L=L.concat(s)}
-  });
-  L.push("","*Estimasi minimal:* "+rp(t),"*Tanggal antar:* "+(v("tgl")||"-"),"*Jam antar:* "+(v("jam")||"-"),"*Penginapan/alamat:* "+v("alamat"));
-  if(v("cat"))L.push("*Catatan:* "+v("cat"));
-  L.push("","Mohon konfirmasi ketersediaan dan total biayanya. Terima kasih!");
-  window.open("https://wa.me/"+WA+"?text="+encodeURIComponent(L.join("\n")),"_blank");
+  var isNew=sig!==lastSig;
+  ord.no=isNew?newOrderNo():lastNo;
+  if(!ord.no)ord.no=newOrderNo();
+  sendingOrder=true;btn.disabled=true;
+  var oldText=btn.textContent;
+  btn.textContent="Menyimpan pesanan...";
+  // Buka tab kosong saat klik masih dianggap interaksi langsung pengguna,
+  // agar browser tidak memblokir tab WhatsApp setelah proses async selesai.
+  var waWindow=window.open("about:blank","_blank");
+  try{
+    if(isNew){
+      try{
+        await saveOrder(ord);
+        lastSig=sig;lastNo=ord.no;
+      }catch(saveError){
+        err.textContent="Pesanan belum tersimpan di sistem ABY. Periksa koneksi lalu coba lagi, atau lanjutkan ke WhatsApp tanpa pencatatan otomatis.";
+        var continueToWA=confirm("Pesanan belum berhasil tersimpan di sistem ABY. Apakah Anda tetap ingin melanjutkan ke WhatsApp? Sebaiknya pilih Batal untuk mencoba kembali.");
+        if(!continueToWA){if(waWindow)waWindow.close();return;}
+      }
+    }
+    var L=["Halo ABY Holiday Assistant, saya ingin memesan:","","*No. Pesanan:* "+ord.no,"*Nama:* "+v("nama"),"*WhatsApp:* "+v("wa"),"","*Pesanan:*"];
+    PK.forEach(function(x){
+      var s=[];x.items.forEach(function(m,i){var n=q[x.id+i];if(n)s.push("  - "+m.n+" x "+n+" "+x.u)});
+      if(s.length){L.push("*"+x.n+"*");L=L.concat(s)}
+    });
+    L.push("","*Estimasi minimal:* "+rp(t),"*Tanggal antar:* "+(v("tgl")||"-"),"*Jam antar:* "+(v("jam")||"-"),"*Penginapan/alamat:* "+v("alamat"));
+    if(v("cat"))L.push("*Catatan:* "+v("cat"));
+    L.push("","Mohon konfirmasi ketersediaan dan total biayanya. Terima kasih!");
+    var waUrl="https://wa.me/"+WA+"?text="+encodeURIComponent(L.join("\n"));
+    if(waWindow){waWindow.location.href=waUrl;}
+    else{err.textContent="Browser memblokir tab baru. Tekan tombol Kirim Pesanan lagi atau izinkan pop-up untuk website ini.";}
+  }finally{
+    sendingOrder=false;btn.disabled=false;btn.textContent=oldText;
+  }
 };
 </script>
 
