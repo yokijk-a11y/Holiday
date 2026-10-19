@@ -160,17 +160,17 @@ html[dir=rtl] #p3,html[dir=rtl] #notaModal{text-align:left}
 .rq{margin:0 14px 14px}
 .rqph{background:linear-gradient(135deg,var(--green),#2f8a5f 55%,var(--gold));display:flex;align-items:center;justify-content:center}
 .rqph::after{content:"🔎";font-size:3rem;opacity:.9}
-.rqbody{display:none;border-top:1px dashed var(--line);padding:6px 14px 14px}
-.rq.open .rqbody{display:block}
-.rq h2{font-size:1.1rem;margin:0 0 6px;color:var(--green);letter-spacing:.03em}
-.rq .rqd{margin:0 0 6px;font-size:.9rem;color:var(--muted)}
-.rq textarea{min-height:84px}
-.rq .send{margin-top:6px;background:#1b8f4e}
-.rq .flow{margin:16px 0 0;padding:12px 14px;border:1px dashed var(--line);border-radius:14px;background:var(--inbg)}
-.rq .flow h3{margin:0 0 6px;font-size:.98rem;color:var(--brown)}
-.rq .flow ol{margin:0;padding-left:20px;font-size:.88rem}
-.rq .flow li{margin:4px 0}
-html[dir=rtl] .rq .flow ol{padding-left:0;padding-right:20px}
+.rqph.hasimg::after{content:none}
+.rqbody{padding:6px 14px 14px}
+.rqbody h2{font-size:1.1rem;margin:0 0 6px;color:var(--green);letter-spacing:.03em}
+.rqbody .rqd{margin:0 0 6px;font-size:.9rem;color:var(--muted)}
+.rqbody textarea{min-height:84px}
+.rqbody .send{margin-top:6px;background:#1b8f4e}
+.rqbody .flow{margin:16px 0 0;padding:12px 14px;border:1px dashed var(--line);border-radius:14px;background:var(--inbg)}
+.rqbody .flow h3{margin:0 0 6px;font-size:.98rem;color:var(--brown)}
+.rqbody .flow ol{margin:0;padding-left:20px;font-size:.88rem}
+.rqbody .flow li{margin:4px 0}
+html[dir=rtl] .rqbody .flow ol{padding-left:0;padding-right:20px}
 </style>
 </head>
 <body>
@@ -182,10 +182,10 @@ html[dir=rtl] .rq .flow ol{padding-left:0;padding-right:20px}
   <div class="pkgs" id="pkgs"></div>
   <section class="pkg rq" id="rq">
     <button type="button" class="head" id="rq_toggle" aria-expanded="false" aria-controls="rq_body">
-      <div class="ph rqph"><span class="tag" id="rq_h">PERMINTAAN KHUSUS</span></div>
+      <div class="ph rqph" id="rq_ph"><span class="tag" id="rq_h">PERMINTAAN KHUSUS</span></div>
       <div class="hb"><div class="tx"><p id="rq_d">Tidak menemukan yang Anda cari di katalog kami? Sampaikan kebutuhan Anda, dan ABY akan membantu mencarikannya sesuai selera dan anggaran Anda.</p><span class="price" id="rq_btn">Isi formulir</span></div><span class="chev">⌄</span></div>
     </button>
-    <div class="rqbody" id="rq_body">
+    <div class="menus rqbody" id="rq_body">
     <label for="rq_nama">Nama pelanggan</label>
     <input id="rq_nama" autocomplete="name">
     <label for="rq_wa">Nomor WhatsApp</label>
@@ -614,6 +614,26 @@ function renderAdmin(){
     };
     sec.appendChild(hd);sec.appendChild(body);box.appendChild(sec);
   });
+  /* Editor kartu Permintaan Khusus */
+  (function(){
+    var sec=el("div","asec"),hd=el("button","apk",'<span>'+esc(W.rq.n||"Permintaan Khusus")+'</span><span class="chev2">▾</span>');hd.type="button";
+    var body=el("div","abody");body.hidden=true;
+    var r0=el("div","arow",'<img alt=""><div class="f"><b>Gambar, judul &amp; deskripsi</b><label class="pick">Ganti gambar<input type="file" accept="image/*"></label><button type="button" class="mini dg rx">Hapus gambar</button><input class="pn" placeholder="Judul kartu"><textarea class="pd" placeholder="Deskripsi"></textarea></div>');
+    var i0=r0.querySelector("img"),pn=r0.querySelector(".pn"),pd=r0.querySelector(".pd"),rx=r0.querySelector(".rx");
+    function showImg(){if(W.rq.img){i0.src=W.rq.img;i0.hidden=false;rx.hidden=false}else{i0.removeAttribute("src");i0.hidden=true;rx.hidden=true}}
+    pn.value=W.rq.n;pd.value=W.rq.d;showImg();
+    pn.oninput=function(){W.rq.n=pn.value;hd.firstChild.textContent=pn.value||"Permintaan Khusus"};
+    pd.oninput=function(){W.rq.d=pd.value};
+    rx.onclick=function(){W.rq.img="";showImg()};
+    r0.querySelector("input[type=file]").onchange=function(){var f=this.files[0];if(f)shrink(f,700,function(d){if(d){W.rq.img=d;showImg()}else document.getElementById("aerr").textContent="Gambar tidak bisa dibaca."})};
+    body.appendChild(r0);
+    hd.onclick=function(){
+      var opening=body.hidden;
+      Array.prototype.forEach.call(box.querySelectorAll(".asec"),function(o){o.querySelector(".abody").hidden=true;o.classList.remove("open")});
+      if(opening){body.hidden=false;sec.classList.add("open")}
+    };
+    sec.appendChild(hd);sec.appendChild(body);box.appendChild(sec);
+  })();
 }
 function dataToBlob(d){
   var p=d.split(","),m=/:(.*?);/.exec(p[0])[1],b=atob(p[1]),n=b.length,u=new Uint8Array(n);
@@ -635,7 +655,7 @@ function up(key,img){
   });
 }
 function startEdit(){
-  W={pk:{},mn:{}};
+  W={pk:{},mn:{},rq:{n:RQD.n||RQ.id.h,d:RQD.d||RQ.id.d,img:RQD.img||""}};
   PK.forEach(function(x){
     W.pk[x.id]={img:x.img,n:x.n};
     x.items.forEach(function(m,i){W.mn[x.id+i]={n:m.n,d:m.d,p:m.p,img:m.img,imgs:(m.imgs||[]).slice()}});
@@ -665,6 +685,7 @@ function loadRemote(){
       });
       applyData(rows);
       renderPkgs();
+      if(window.rqApply)rqApply(rows["rq"]);
       if(/[?&]debug/.test(location.search))alert("Data termuat: "+list.length+" baris dari Appwrite.");
     })
     .catch(function(e){
@@ -722,6 +743,7 @@ document.getElementById("asave").onclick=function(){
   var ent=[],rows=[];
   Object.keys(W.pk).forEach(function(k){ent.push(["pk:"+k, W.pk[k]])});
   Object.keys(W.mn).forEach(function(k){ent.push(["mn:"+k, W.mn[k]])});
+  if(W.rq)ent.push(["rq", W.rq]);
   var A=window.Appwrite;
   seq(ent,function(e){
     var d=e[1];
@@ -744,6 +766,7 @@ document.getElementById("asave").onclick=function(){
   }).then(function(){
     var map={};rows.forEach(function(x){map[x.key]=x.data});
     applyData(map);renderPkgs();
+    if(window.rqApply)rqApply(map["rq"]);
     err.textContent="Tersimpan. Perubahan sudah tampil untuk pengunjung.";
   }).catch(function(e){
     console.error(e);err.textContent="Gagal menyimpan: "+errText(e);
@@ -1092,10 +1115,22 @@ eNama:"Please enter your name.",eWa:"Please enter your WhatsApp number.",eDesk:"
 hi:"Hello ABY Holiday Assistant, I would like to submit a *Special Request*:",lNama:"Name",lWa:"WhatsApp",lKat:"Category",lDesk:"Request",lJml:"Quantity",lAng:"Budget",lTgl:"Date needed",lAlamat:"Hotel/address",lCat:"Notes",bye:"Please find it and send me the price and service fee details. Thank you!"}
 };
 function rt(k){return (RQ[cur]&&RQ[cur][k])||RQ.id[k]}
+var RQD={n:"",d:"",img:""};
+function rqApply(d){
+  RQD={n:(d&&d.n)||"",d:(d&&d.d)||"",img:(d&&d.img)||""};
+  applyReq();
+}
 function applyReq(){
   var g=function(i){return document.getElementById(i)};
-  if(!g("rq"))return;
-  g("rq_h").textContent=rt("h");g("rq_d").textContent=rt("d");g("rq_btn").textContent=rt("btn");
+  if(!g("rq_h"))return;
+  g("rq_h").textContent=(RQD.n&&RQD.n!==RQ.id.h)?RQD.n:rt("h");
+  g("rq_d").textContent=(RQD.d&&RQD.d!==RQ.id.d)?RQD.d:rt("d");
+  var ph=g("rq_ph");
+  if(ph){
+    ph.style.backgroundImage=RQD.img?'url("'+String(RQD.img).replace(/"/g,"%22")+'")':"";
+    ph.style.backgroundSize="cover";ph.style.backgroundPosition="center";
+    ph.classList.toggle("hasimg",!!RQD.img);
+  }g("rq_btn").textContent=rt("btn");
   [["nama","nama"],["wa","wa"],["kat","kat"],["desk","desk"],["jml","jml"],["ang","ang"],["tgl","tgl"],["alamat","alamat"],["cat","cat"]].forEach(function(a){
     var l=document.querySelector("label[for=rq_"+a[0]+"]");if(l)l.textContent=rt(a[1]);
   });
@@ -1109,10 +1144,11 @@ function applyReq(){
   var _as=applyStatic;
   applyStatic=function(){_as();applyReq()};
   applyReq();
+  /* Buka sebagai layar penuh seperti paket lain; tombol Back menutupnya dan kembali ke halaman awal */
   document.getElementById("rq_toggle").onclick=function(){
-    var c=document.getElementById("rq"),o=c.classList.toggle("open");
-    this.setAttribute("aria-expanded",o);
-    if(o)setTimeout(function(){c.scrollIntoView({behavior:"smooth",block:"start"})},50);
+    var c=document.getElementById("rq"),b=document.getElementById("rq_body");
+    if(SH.open&&SH.card===c){closeSheet();return}
+    openSheet(c,this,b);
   };
   document.getElementById("rq_send").onclick=function(){
     var g=function(i){return document.getElementById(i).value.trim()};
