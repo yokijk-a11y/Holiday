@@ -392,6 +392,29 @@ function applyData(rows){
 }
 applyData({});
 var LB={list:[],i:0};
+/* ===== Tombol Back HP: tutup lapisan teratas, lalu kembali ke home (bukan keluar website) ===== */
+var NAV={stk:[]};
+function navState(){return (history.state&&typeof history.state.d==="number")?history.state.d:0}
+try{history.replaceState({d:0},"")}catch(e){}
+function pushLayer(nm){NAV.stk.push(nm);try{history.pushState({d:NAV.stk.length},"")}catch(e){}}
+function syncHist(){try{var k=navState()-NAV.stk.length;if(k>0)history.go(-k)}catch(e){}}
+function dropLayer(nm){
+  var i=NAV.stk.lastIndexOf(nm);if(i<0)return;
+  while(NAV.stk.length>i+1)closeLayerUI(NAV.stk.pop(),true);
+  NAV.stk.length=i;
+  syncHist();
+}
+function closeLayerUI(nm,instant){
+  if(nm==="nota"){document.getElementById("notaModal").hidden=true}
+  else if(nm==="lb"){closeLbUI()}
+  else if(nm==="sheet"){closeSheet(!!instant,true)}
+  else{showPage(1)}
+}
+window.addEventListener("popstate",function(e){
+  var d=(e.state&&typeof e.state.d==="number")?e.state.d:0;
+  while(NAV.stk.length>d)closeLayerUI(NAV.stk.pop(),false);
+  if(d>NAV.stk.length){try{history.replaceState({d:NAV.stk.length},"")}catch(x){}}
+});
 function lbShow(){
   var l=document.getElementById("lb"),n=LB.list.length;
   l.querySelector("img").src=LB.list[LB.i]||"";
@@ -405,8 +428,10 @@ function openLb(m,x){
   LB.list=(m.imgs&&m.imgs.length)?m.imgs:[defImg(x)];LB.i=0;lbShow();
   l.querySelector("figcaption").innerHTML=(function(){var tm=tMn(x,x.items.indexOf(m),m);return "<b>"+esc(tm.n)+"</b><span>"+esc(tm.d)+"</span><em>"+rp(m.p)+(x.u==="kotak"?" "+tt("perbox"):"")+"</em>"})();
   l.hidden=false;document.body.style.overflow="hidden";
+  if(NAV.stk.indexOf("lb")<0)pushLayer("lb");
 }
-function closeLb(){document.getElementById("lb").hidden=true;document.body.style.overflow=(typeof SH!=="undefined"&&SH.open)?"hidden":""}
+function closeLbUI(){document.getElementById("lb").hidden=true;document.body.style.overflow=(typeof SH!=="undefined"&&SH.open)?"hidden":""}
+function closeLb(){if(document.getElementById("lb").hidden)return;closeLbUI();dropLayer("lb")}
 document.getElementById("lb").onclick=closeLb;
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape")closeLb();
@@ -453,13 +478,13 @@ function openSheet(card,head,menus){
   document.body.style.overflow="hidden";
   void s.offsetWidth;
   s.classList.add("on");
-  try{if(!(history.state&&history.state.sheet))history.pushState({sheet:1},"")}catch(e){}
+  if(NAV.stk.indexOf("sheet")<0)pushLayer("sheet");
 }
 function closeSheet(instant,fromPop){
   if(!SH.open)return;
   var s=document.getElementById("sheet"),card=SH.card,head=SH.head,menus=SH.menus;
   SH.open=false;
-  if(!fromPop&&history.state&&history.state.sheet){try{SH.skipPop=true;history.back()}catch(e){SH.skipPop=false}}
+  if(!fromPop)dropLayer("sheet");
   function fin(){
     card.appendChild(head);card.appendChild(menus);card.style.height="";
     s.hidden=true;s.style.transition="";
@@ -470,10 +495,6 @@ function closeSheet(instant,fromPop){
   s.classList.remove("on");
   SH.tm=setTimeout(sheetFlush,450);
 }
-window.addEventListener("popstate",function(){
-  if(SH.skipPop){SH.skipPop=false;return}
-  if(SH.open)closeSheet(false,true);
-});
 var box=document.getElementById("pkgs");
 function renderPkgs(){
 var reopen=SH.open&&SH.card?SH.card.getAttribute("data-pk"):null;
@@ -509,16 +530,30 @@ PK.forEach(function(x){
   card.appendChild(head);card.appendChild(menus);card._h=head;card._m=menus;box.appendChild(card);
 });
 calc();
+if(!reopen&&!SH.open&&NAV.stk.indexOf("sheet")>=0)dropLayer("sheet");
 if(reopen){for(var i=0;i<box.children.length;i++){var c=box.children[i];if(c.getAttribute("data-pk")===reopen){openSheet(c,c._h,c._m);var sh=document.getElementById("sheet");sh.style.transition="none";void sh.offsetWidth;sh.style.transition="";break}}}
 }
 renderPkgs();
-function go(n){
-  if(n!==1)closeSheet(true);
+function showPage(n){
   document.getElementById("p1").hidden=n!==1;
   document.getElementById("p2").hidden=n!==2;
   document.getElementById("p3").hidden=n!==3;
   document.getElementById("bar").hidden=n!==1;
   window.scrollTo(0,0);
+}
+function go(n){
+  var st=NAV.stk;
+  if(n===1){
+    while(st.length)closeLayerUI(st.pop(),true);
+    syncHist();
+    showPage(1);return;
+  }
+  if(st.length===1&&st[0]==="p"+n){showPage(n);return}
+  while(st.length)closeLayerUI(st.pop(),true);
+  st.push("p"+n);
+  var c=navState();
+  try{if(c===0)history.pushState({d:1},"");else if(c>1)history.go(1-c)}catch(e){}
+  showPage(n);
 }
 
 /* ===== Appwrite TablesDB client ===== */
@@ -863,7 +898,7 @@ function notaPaper(N){
   if(N.cat)h+='<hr><div><small>Catatan:</small> '+esc(N.cat)+'</div>';
   return h+'<p class="nota-foot">Terima kasih sudah memesan di ABY Holiday Assistant 🙏</p>';
 }
-function showNota(N){NM=N;$("notaPaper").innerHTML=notaPaper(N);$("notaModal").hidden=false;$("notaModal").scrollTop=0}
+function showNota(N){NM=N;$("notaPaper").innerHTML=notaPaper(N);$("notaModal").hidden=false;$("notaModal").scrollTop=0;if(NAV.stk.indexOf("nota")<0)pushLayer("nota")}
 function notaToCanvas(N){
   var W=720,P=40,F="Arial,Helvetica,sans-serif",L=N.type==="l",tmp=document.createElement("canvas").getContext("2d");
   function wrapTxt(t,font,max){tmp.font=font;var out=[],cur="";String(t||"").split(/\s+/).filter(Boolean).forEach(function(w){var tt=cur?cur+" "+w:w;if(tmp.measureText(tt).width<=max)cur=tt;else{if(cur)out.push(cur);cur=w}});if(cur)out.push(cur);return out.length?out:[""]}
@@ -950,11 +985,12 @@ $("n_make").onclick=function(){
   try{if(N.bayar)localStorage.setItem("aby_bayar",N.bayar)}catch(e){}
   showNota(N);
 };
-$("notaClose").onclick=function(){$("notaModal").hidden=true};
+function closeNota(){if($("notaModal").hidden)return;$("notaModal").hidden=true;dropLayer("nota")}
+$("notaClose").onclick=closeNota;
 $("notaPrint").onclick=function(){window.print()};
 $("notaSave").onclick=function(){if(NM)saveNotaImage(NM)};
 $("notaImgChat").onclick=function(){if(NM)sendNotaWA(NM)};
-document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("notaModal").hidden)$("notaModal").hidden=true});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("notaModal").hidden)closeNota()});
 
 /* ===== Pesanan masuk -> nota otomatis ===== */
 var ORD=[],openOrd=null;
