@@ -358,6 +358,7 @@ function tPkD(x){return (cur!=="id"&&D[cur])?D[cur].pk[PKI[x.id]][1]:x.d}
 function tMn(x,i,m){
   if(cur==="id"||!D[cur])return {n:m.n,d:m.d};
   var df=x.m[i],tr=D[cur].mn[PKI[x.id]][i];
+  if(!df||!tr)return {n:m.n,d:m.d};
   return {n:m.n===df[0]?tr[0]:m.n,d:m.d===df[1]?tr[1]:m.d};
 }
 function applyStatic(){
@@ -387,7 +388,14 @@ function applyData(rows){
     var pr=rows["pk:"+x.id];
     if(x.n0==null)x.n0=x.n;x.n=(pr&&pr.n&&String(pr.n).trim())||x.n0;
     x.img=(pr&&pr.img)||(S.pk&&S.pk[x.id]&&S.pk[x.id].img)||"";
-    x.items=x.m.map(function(m,i){var s=rows["mn:"+x.id+i]||{};var im=(s.imgs&&s.imgs.length)?s.imgs.filter(Boolean).slice(0,MAXIMG):(s.img?[s.img]:[]);return {n:s.n||m[0],d:s.d!=null?s.d:m[1],p:s.p!=null?s.p:x.p,imgs:im,img:im[0]||""}});
+    var cnt=(pr&&typeof pr.cnt==="number"&&pr.cnt>=1)?pr.cnt:x.m.length;
+    x.items=[];
+    for(var i=0;i<cnt;i++){
+      var m=x.m[i]||["Menu baru",""];
+      var s=rows["mn:"+x.id+i]||{};
+      var im=(s.imgs&&s.imgs.length)?s.imgs.filter(Boolean).slice(0,MAXIMG):(s.img?[s.img]:[]);
+      x.items.push({n:s.n||m[0],d:s.d!=null?s.d:m[1],p:s.p!=null?s.p:x.p,imgs:im,img:im[0]||""});
+    }
   });
 }
 applyData({});
@@ -645,16 +653,34 @@ function renderAdmin(){
       var i0=r0.querySelector("img");i0.src=W.pk[x.id].img;
       pick(r0.querySelector("input"),700,i0,function(d){W.pk[x.id].img=d});
       body.appendChild(r0);
-      x.items.forEach(function(m,i){
-        var k=x.id+i,w=W.mn[k];
-        var row=el("div","arow sub",'<div class="f"><div class="gal"></div><div class="gcnt"></div><input class="nm" placeholder="Nama menu"><input class="ds" placeholder="Deskripsi"><input class="pr" type="number" min="0" step="500" inputmode="numeric" aria-label="Harga"></div>');
-        renderGal(row.querySelector(".gal"),row.querySelector(".gcnt"),w);
-        var nm=row.querySelector(".nm"),ds=row.querySelector(".ds"),pr=row.querySelector(".pr");
-        nm.value=w.n;ds.value=w.d;pr.value=w.p;
-        nm.oninput=function(){w.n=nm.value};ds.oninput=function(){w.d=ds.value};
-        pr.oninput=function(){w.p=parseInt(pr.value,10)||0};
-        body.appendChild(row);
-      });
+      var mw=el("div","mwrap");body.appendChild(mw);
+      var addb=el("button","mini","+ Tambah menu");addb.type="button";
+      addb.style.cssText="display:block;width:100%;margin:12px 0";
+      function draw(){
+        mw.innerHTML="";
+        var L=W.lst[x.id];
+        L.forEach(function(w,i){
+          var row=el("div","arow sub",'<div class="f"><b>Menu '+(i+1)+'</b><div class="gal"></div><div class="gcnt"></div><input class="nm" placeholder="Nama menu"><input class="ds" placeholder="Deskripsi"><input class="pr" type="number" min="0" step="500" inputmode="numeric" aria-label="Harga"><button type="button" class="mini dg mdel">Hapus menu</button></div>');
+          renderGal(row.querySelector(".gal"),row.querySelector(".gcnt"),w);
+          var nm=row.querySelector(".nm"),ds=row.querySelector(".ds"),pr=row.querySelector(".pr");
+          nm.value=w.n;ds.value=w.d;pr.value=w.p;
+          nm.oninput=function(){w.n=nm.value};ds.oninput=function(){w.d=ds.value};
+          pr.oninput=function(){w.p=parseInt(pr.value,10)||0};
+          row.querySelector(".mdel").onclick=function(){
+            var er=document.getElementById("aerr");
+            if(L.length<=1){er.textContent="Minimal harus ada 1 menu di setiap paket.";return}
+            if(!confirm('Hapus menu "'+(w.n||"tanpa nama")+'"?'))return;
+            L.splice(i,1);W.chg[x.id]=1;er.textContent="";draw();
+          };
+          mw.appendChild(row);
+        });
+      }
+      addb.onclick=function(){
+        W.lst[x.id].push({n:"Menu baru",d:"",p:x.p,img:"",imgs:[]});
+        W.chg[x.id]=1;document.getElementById("aerr").textContent="";draw();
+        var rs=mw.children;try{rs[rs.length-1].scrollIntoView({behavior:"smooth",block:"center"})}catch(e){}
+      };
+      draw();body.appendChild(addb);
     }
     hd.onclick=function(){
       var opening=body.hidden;
@@ -704,10 +730,10 @@ function up(key,img){
   });
 }
 function startEdit(){
-  W={pk:{},mn:{},rq:{n:RQD.n||RQ.id.h,d:RQD.d||RQ.id.d,img:RQD.img||""}};
+  W={pk:{},lst:{},chg:{},rq:{n:RQD.n||RQ.id.h,d:RQD.d||RQ.id.d,img:RQD.img||""}};
   PK.forEach(function(x){
     W.pk[x.id]={img:x.img,n:x.n};
-    x.items.forEach(function(m,i){W.mn[x.id+i]={n:m.n,d:m.d,p:m.p,img:m.img,imgs:(m.imgs||[]).slice()}});
+    W.lst[x.id]=x.items.map(function(m){return {n:m.n,d:m.d,p:m.p,img:m.img,imgs:(m.imgs||[]).slice()}});
   });
   renderAdmin();
 }
@@ -789,9 +815,9 @@ document.getElementById("asave").onclick=function(){
   var err=document.getElementById("aerr"),btn=this;
   if(!ready||!APPWRITE_DB){err.textContent="Appwrite belum siap atau APPWRITE_DB kosong.";return}
   btn.disabled=true;err.textContent="Menyimpan...";
-  var ent=[],rows=[];
-  Object.keys(W.pk).forEach(function(k){ent.push(["pk:"+k, W.pk[k]])});
-  Object.keys(W.mn).forEach(function(k){ent.push(["mn:"+k, W.mn[k]])});
+  var ent=[],rows=[],stale=[];
+  Object.keys(W.pk).forEach(function(k){W.pk[k].cnt=W.lst[k].length;ent.push(["pk:"+k, W.pk[k]])});
+  Object.keys(W.lst).forEach(function(k){W.lst[k].forEach(function(w,i){ent.push(["mn:"+k+i, w])})});
   if(W.rq)ent.push(["rq", W.rq]);
   var A=window.Appwrite;
   seq(ent,function(e){
@@ -806,14 +832,21 @@ document.getElementById("asave").onclick=function(){
     return tablesDB.listRows({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,queries:[A.Query.limit(200)]});
   }).then(function(res){
     var existing={},list=res.rows||res.documents||[];
-    list.forEach(function(d){if(d.key)existing[d.key]=d.$id});
+    list.forEach(function(d){
+      if(d.key)existing[d.key]=d.$id;
+      var mm=/^mn:([a-z]+)(\d+)$/.exec(d.key||"");
+      if(mm&&W.lst[mm[1]]&&+mm[2]>=W.lst[mm[1]].length)stale.push(d.$id);
+    });
     return seq(rows,function(r){
       var payload={key:r.key,data:JSON.stringify(r.data)};
       if(existing[r.key]) return tablesDB.updateRow({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,rowId:existing[r.key],data:payload});
       return tablesDB.createRow({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,rowId:A.ID.unique(),data:payload});
     });
   }).then(function(){
+    return seq(stale,function(rid){return tablesDB.deleteRow({databaseId:APPWRITE_DB,tableId:APPWRITE_TABLE,rowId:rid}).catch(function(e){console.warn("hapus baris lama",e)})});
+  }).then(function(){
     var map={};rows.forEach(function(x){map[x.key]=x.data});
+    Object.keys(W.chg).forEach(function(id){Object.keys(q).forEach(function(k){if(k.indexOf(id)===0&&/^\D+\d+$/.test(k))q[k]=0})});W.chg={};
     applyData(map);renderPkgs();
     if(window.rqApply)rqApply(map["rq"]);
     err.textContent="Tersimpan. Perubahan sudah tampil untuk pengunjung.";
